@@ -21,42 +21,60 @@ A modern, GPU-accelerated game engine that combines the power of Local Language 
 
 ## 🛠️ Prerequisites
 
-- Python 3.10+
+- Python 3.12+
 - Ollama (Local LLM runner)
-- PyGame
+- uv (Fast Python package installer)
 - GPU with OpenGL support
 
 ## 📦 Installation
 
-1. **Clone the repository**
+1. **Install Ollama**
+   ```bash
+   # Windows (using winget)
+   winget install Ollama.Ollama
+   
+   # Verify installation
+   ollama --version
+   
+   # Pull the Mistral model
+   ollama pull mistral
+   ```
+
+2. **Install uv**
+   ```bash
+   pip install uv
+   ```
+
+3. **Clone the repository**
    ```bash
    git clone https://github.com/yourusername/llm-game-engine.git
    cd llm-game-engine
    ```
 
-2. **Set up virtual environment**
+4. **Set up virtual environment with uv**
    ```bash
-   python -m venv venv
-   source venv/bin/activate  # On Windows: venv\Scripts\activate
+   # Create and activate virtual environment
+   uv venv game_env
+   game_env\Scripts\activate  # On Windows
+   # source game_env/bin/activate  # On Unix/MacOS
    ```
 
-3. **Install dependencies**
+5. **Install dependencies**
    ```bash
-   pip install -r requirements.txt
+   uv pip install -r requirements.txt
    ```
 
-4. **Install Ollama**
-   - Windows: `winget install Ollama.Ollama`
-   - Pull the Mistral model: `ollama pull mistral`
+## 🎮 Running the Game
 
-## 🎮 Usage
+1. **Make sure Ollama is running**
+   The Ollama service should be running in the background.
 
-1. **Start the game**
+2. **Start the game**
    ```bash
-   python main.py
+   uv run main.py
    ```
 
-2. **Basic Commands**
+3. **Basic Commands**
    - Movement: "go left", "move forward", etc.
    - Combat: "attack enemy", "cast fireball", etc.
    - Inventory: "check inventory", "use potion", etc.
@@ -85,7 +103,7 @@ For detailed architecture information, see [ARCHITECTURE.md](ARCHITECTURE.md).
 ### Running Tests
 
 ```bash
-python -m pytest tests/
+uv run -m pytest tests/
 ```
 
 ## 🤝 Contributing

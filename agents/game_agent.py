@@ -3,7 +3,7 @@ Game Agent: The main AI orchestrator that manages all other agents.
 """
 
 from ollama import Client
-from typing import Dict, Any, Tuple
+from typing import Dict, Any, Tuple, List
 from queue import Queue
 
 from config import LLM_MODEL, COMMAND_RETRY_ATTEMPTS
@@ -27,12 +27,42 @@ class GameAgent:
         # Initialize all sub-agents
         self.movement_agent = MovementAgent()
 
-        # Command type mapping
+        # Command type mapping with examples
         self.command_types = {
-            "move": self._handle_movement,
-            "attack": self._handle_combat,
-            "inventory": self._handle_inventory,
-            "talk": self._handle_dialogue
+            "move": {
+                "handler": self._handle_movement,
+                "examples": [
+                    "go left",
+                    "move to the center",
+                    "walk forward",
+                    "head to the top right",
+                    "move to bottom"
+                ]
+            },
+            "attack": {
+                "handler": self._handle_combat,
+                "examples": [
+                    "attack enemy",
+                    "cast fireball",
+                    "shoot arrow"
+                ]
+            },
+            "inventory": {
+                "handler": self._handle_inventory,
+                "examples": [
+                    "check inventory",
+                    "use potion",
+                    "equip sword"
+                ]
+            },
+            "talk": {
+                "handler": self._handle_dialogue,
+                "examples": [
+                    "talk to merchant",
+                    "speak with guard",
+                    "ask about quest"
+                ]
+            }
         }
 
         # Initialize command queue
@@ -50,7 +80,7 @@ class GameAgent:
         print(f"LLM interpreted command type as: '{command_type}'")
 
         if command_type in self.command_types:
-            handler = self.command_types[command_type]
+            handler = self.command_types[command_type]["handler"]
             success, message = handler(command_text)
             print(f"Handler result: success={success}, message='{message}'")
             return success, message
@@ -59,15 +89,22 @@ class GameAgent:
 
     def _interpret_command_type(self, command_text: str) -> str:
         """Use Ollama to classify the command type."""
-        prompt = f"""
-        Classify this command by responding with EXACTLY ONE WORD from these options:
-        - move (for movement commands like "go left", "walk forward")
-        - attack (for combat commands like "attack enemy", "cast spell")
-        - inventory (for item commands like "use potion", "check inventory")
-        - talk (for NPC interaction like "talk to merchant")
-        - invalid (if it doesn't fit any category)
+        # Build examples string from command_types
+        example_lines = []
+        for cmd_type, info in self.command_types.items():
+            example_lines.append(f"Category '{cmd_type}':")
+            for example in info["examples"]:
+                example_lines.append(f"- {example}")
+        examples = "\n".join(example_lines)
 
-        DO NOT include any explanation or additional text. Just return the single word category.
+        prompt = f"""
+        Classify this command into one of these categories based on these examples:
+
+        {examples}
+
+        Respond with EXACTLY ONE WORD (the category name) from: {', '.join(self.command_types.keys())}.
+        If the command doesn't match any category, respond with 'invalid'.
+        DO NOT include any explanation or additional text.
         
         Command: "{command_text}"
         """
@@ -83,12 +120,6 @@ class GameAgent:
                 command_type = response['message']['content'].strip().lower()
                 print(
                     f"LLM response (attempt {attempt + 1}): '{command_type}'")
-
-                # Extract just the category word if it's in a sentence
-                for valid_type in list(self.command_types.keys()) + ["invalid"]:
-                    if valid_type in command_type:
-                        command_type = valid_type
-                        break
 
                 if command_type in self.command_types or command_type == "invalid":
                     return command_type
